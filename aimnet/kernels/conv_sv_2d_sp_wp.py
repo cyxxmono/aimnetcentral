@@ -24,6 +24,7 @@
 import torch
 import warp as wp
 from torch import Tensor
+from typing import List
 
 wp.init()
 
@@ -236,7 +237,7 @@ def _(a: Tensor, idx: Tensor, g: Tensor) -> Tensor:
     mutates_args=(),
     device_types=["cuda"],
 )
-def _(grad_output: Tensor, a: Tensor, idx: Tensor, g: Tensor) -> list[Tensor]:
+def _(grad_output: Tensor, a: Tensor, idx: Tensor, g: Tensor) -> List[Tensor]:
     """Backward primitive for conv_sv_2d_sp."""
     stream = _get_stream(a.device)
     device = wp.device_from_torch(a.device)
@@ -280,7 +281,7 @@ def _(grad_output: Tensor, a: Tensor, idx: Tensor, g: Tensor) -> list[Tensor]:
 
 
 @torch.library.register_fake("aimnet::conv_sv_2d_sp_bwd")
-def _(grad_output: Tensor, a: Tensor, idx: Tensor, g: Tensor) -> list[Tensor]:
+def _(grad_output: Tensor, a: Tensor, idx: Tensor, g: Tensor) -> List[Tensor]:
     B_out, M = idx.shape
     G = a.shape[2]
     return [
@@ -301,7 +302,7 @@ def _(
     a: Tensor,
     idx: Tensor,
     g: Tensor,
-) -> list[Tensor]:
+) -> List[Tensor]:
     """Double backward primitive for conv_sv_2d_sp."""
     stream = _get_stream(a.device)
     device = wp.device_from_torch(a.device)
@@ -385,7 +386,7 @@ def _(
     a: Tensor,
     idx: Tensor,
     g: Tensor,
-) -> list[Tensor]:
+) -> List[Tensor]:
     B, A, G = a.shape
     B_out, M = idx.shape
     return [

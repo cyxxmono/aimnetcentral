@@ -176,9 +176,10 @@ class LRCoulomb(nn.Module):
         else:
             raise ValueError(f"Unknown method {self.method}")
         if self.key_out in data:
-            data[self.key_out] = data[self.key_out].double() + e
+            out_dtype = data[self.key_out].dtype
+            data[self.key_out] = data[self.key_out] + e.to(out_dtype)
         else:
-            data[self.key_out] = e
+            data[self.key_out] = e.to(data[self.key_in].dtype)
         return data
 
 
@@ -224,9 +225,10 @@ class SRCoulomb(nn.Module):
 
         # Subtract short-range Coulomb from energy (in float64)
         if self.key_out in data:
-            data[self.key_out] = data[self.key_out].double() - e_sr
+            out_dtype = data[self.key_out].dtype
+            data[self.key_out] = data[self.key_out] - e_sr.to(out_dtype)
         else:
-            data[self.key_out] = -e_sr
+            data[self.key_out] = (-e_sr).to(data[self.key_in].dtype)
         return data
 
 
