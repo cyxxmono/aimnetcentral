@@ -270,20 +270,7 @@ def default_trainer(
         x = prepare_batch(batch[0], device=device, non_blocking=non_blocking)  # type: ignore
         y = prepare_batch(batch[1], device=device, non_blocking=non_blocking)  # type: ignore
         y_pred = model(x)
-
-        # manuall change to double precision
-        for y_pred_key, y_pred_val in y_pred.items():
-            if y_pred_val.dtype == torch.float32:
-                y_pred_val = y_pred_val.double()
-                y_pred[y_pred_key] = y_pred_val
-        
-        for y_key, y_val in y.items():
-            if y_val.dtype == torch.float32:
-                y_val = y_val.double()
-                y[y_key] = y_val
-
         loss = loss_fn(y_pred, y)["loss"]
-
         loss.backward()
         torch.nn.utils.clip_grad_value_(model.parameters(), 0.4)
         optimizer.step()
