@@ -57,10 +57,12 @@ def load_dataset(cfg: omegaconf.DictConfig, kind="train"):
 def apply_sae(ds: SizeGroupedDataset, cfg: omegaconf.DictConfig):
     for k, c in cfg.sae.items():
         if c is not None and k in cfg.y:
-            sae = load_yaml(c.file)
-            unique_numbers = set(np.unique(ds.concatenate("numbers").tolist()))
-            if not unique_numbers.issubset(sae.keys()):  # type: ignore[attr-defined]
-                raise ValueError(f"Keys in SAE file {c.file} do not cover all the dataset atoms")
+            if c.file is None: sae = None
+            else: 
+                sae = load_yaml(c.file)
+                unique_numbers = set(np.unique(ds.concatenate("numbers").tolist()))
+                if not unique_numbers.issubset(sae.keys()):  # type: ignore[attr-defined]
+                    raise ValueError(f"Keys in SAE file {c.file} do not cover all the dataset atoms")
             if c.mode == "linreg":
                 ds.apply_peratom_shift(k, k, sap_dict=sae)
             elif c.mode == "logratio":
@@ -268,7 +270,20 @@ def default_trainer(
         x = prepare_batch(batch[0], device=device, non_blocking=non_blocking)  # type: ignore
         y = prepare_batch(batch[1], device=device, non_blocking=non_blocking)  # type: ignore
         y_pred = model(x)
+
+        # manuall change to double precision
+        for y_pred_key, y_pred_val in y_pred.items():
+            if y_pred_val.dtype == torch.float32:
+                y_pred_val = y_pred_val.double()
+                y_pred[y_pred_key] = y_pred_val
+        
+        for y_key, y_val in y.items():
+            if y_val.dtype == torch.float32:
+                y_val = y_val.double()
+                y[y_key] = y_val
+
         loss = loss_fn(y_pred, y)["loss"]
+
         loss.backward()
         torch.nn.utils.clip_grad_value_(model.parameters(), 0.4)
         optimizer.step()
@@ -326,12 +341,12 @@ def build_engine(model, optimizer, scheduler, loss_fn, metrics, cfg, loader_val)
             s.append(f"{k}: {v[1]:.4f}")
         s = " ".join(s)
         logging.info(s)
-        if loss_fn.weights is not None:
-            s = []
-            for k, v in loss_fn.weights.items():
-                s.append(f"{k}: {v:.4f}")
-            s = " ".join(s)
-            logging.info(s)
+        # if loss_fn.weights is not None:
+        #     s = []
+        #     for k, v in loss_fn.weights.items():
+        #         s.append(f"{k}: {v:.4f}")
+        #     s = " ".join(s)
+        #     logging.info(s)
 
     trainer.add_event_handler(Events.EPOCH_STARTED, log_loss_weights)
 
