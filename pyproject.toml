@@ -75,7 +75,7 @@ packages = ["aimnet"]
 
 [tool.hatch.version]
 source = "vcs"
-raw-options = { version_scheme = "no-guess-dev" }
+raw-options = { version_scheme = "no-guess-dev", fallback_version = "0.1.0" }
 
 [tool.hatch.build.targets.sdist]
 include = [
